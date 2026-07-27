@@ -1,0 +1,30 @@
+name: Build LliviumV2
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install DirectX SDK (June 2010)
+        shell: powershell
+        run: |
+          choco install directx-sdk-2010-legacy -y --no-progress
+          # After install, the SDK is at 'C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)'
+          # We add its lib path to the environment for the linker
+          echo "DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build solution
+        run: |
+          msbuild LliviumV2.sln /p:Configuration=Release /p:Platform=x64 /t:Rebuild
